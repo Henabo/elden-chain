@@ -1,8 +1,11 @@
 module github.com/hiro942/authentication/chaincode
 
-go 1.17
+go 1.18
 
-require github.com/hyperledger/fabric-contract-api-go v1.1.1
+require (
+	github.com/hyperledger/fabric-contract-api-go v1.1.1
+	github.com/pkg/errors v0.9.1
+)
 
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
