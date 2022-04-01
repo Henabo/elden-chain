@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 	"github.com/pkg/errors"
 	"time"
@@ -17,7 +16,6 @@ type tci contractapi.TransactionContextInterface
 type Node struct {
 	Id            string      `json:"id"`
 	NodeType      string      `json:"nodeType"`
-	Rule          string      `json:"rule"`
 	PublicKeys    interface{} `json:"publicKeys"`
 	AccessRecords interface{} `json:"accessRecords"`
 	CreatedAt     time.Time   `json:"createdAt"`
@@ -82,17 +80,17 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 	nodes := []Node{
 		{
 			Id:         "star-1",
-			Rule:       "star",
+			NodeType:   "star",
 			PublicKeys: "star-1-publicKey",
 		},
 		{
 			Id:         "star-2",
-			Rule:       "star",
+			NodeType:   "star",
 			PublicKeys: "star-2-publicKey",
 		},
 		{
 			Id:            "user-1",
-			Rule:          "user",
+			NodeType:      "user",
 			PublicKeys:    userPublicKeys,
 			AccessRecords: userAccessRecords,
 		},
@@ -111,17 +109,14 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 }
 
 func (s *SmartContract) SatelliteRegister(ctx tci, id string, publicKey string) error {
-	node, err := s.GetNodeById(ctx, id)
+	_, err := s.GetNodeById(ctx, id)
 	if err != nil {
 		return err
-	}
-	if node != nil {
-		return fmt.Errorf("satellite with id %s have already registered", id)
 	}
 
 	satellite := &Node{
 		Id:            id,
-		Rule:          "star",
+		NodeType:      "star",
 		PublicKeys:    publicKey,
 		AccessRecords: nil,
 		CreatedAt:     time.Now(),
@@ -141,10 +136,10 @@ func (s *SmartContract) UserRegister(ctx tci, id string, macAddr string, publicK
 
 	var userJSON []byte
 
-	if node == nil {
+	if node.Id == "" {
 		newUser := &Node{
 			Id:            id,
-			Rule:          "user",
+			NodeType:      "user",
 			PublicKeys:    map[string]string{macAddr: publicKey},
 			AccessRecords: UserAccessRecords{},
 			CreatedAt:     time.Now(),
@@ -153,11 +148,12 @@ func (s *SmartContract) UserRegister(ctx tci, id string, macAddr string, publicK
 		userJSON, _ = json.Marshal(newUser)
 	}
 
-	if node != nil && node.Rule == "user" {
+	if node.NodeType == "user" {
 		if _, ok := node.PublicKeys.(UserPublicKeys)[macAddr]; ok {
-			return fmt.Errorf("you've already registered")
+			return errors.New("you've already registered")
 		}
 		node.PublicKeys.(UserPublicKeys)[macAddr] = publicKey
+		node.UpdatedAt = time.Now()
 		userJSON, _ = json.Marshal(node)
 
 	}
@@ -170,18 +166,20 @@ func (s *SmartContract) CreateAccessRecord(ctx tci, id string, macAddr string, s
 	if err != nil {
 		return err
 	}
-	if node == nil {
-		return fmt.Errorf("the user with id %s does not exist", id)
-	}
+
 	if node.NodeType != "user" {
-		return fmt.Errorf("cannot add access record into a non-user type object")
+		return errors.New("cannot add access record into a non-user type object")
 	}
 	if _, ok := node.PublicKeys.(UserPublicKeys)[macAddr]; !ok {
-		return fmt.Errorf("user with id %s and macAddr %s does not exist. please register first", id, macAddr)
+		return errors.Errorf("user with id %s and macAddr %s does not exist. please register first", id, macAddr)
 	}
 	nodePair := NodePair{macAddr, satelliteId}
+
 	node.AccessRecords = append(node.AccessRecords.(UserAccessRecords)[nodePair], userAccessRecord)
-	nodeJSON, _ := json.Marshal(node)
+	node.UpdatedAt = time.Now()
+
+	nodeJSON, _ := json.Marshal(&node)
+
 	return ctx.GetStub().PutState(id, nodeJSON)
 }
 
@@ -190,17 +188,14 @@ func (s *SmartContract) GetSatellitePublicKey(ctx tci, id string) (string, error
 	if err != nil {
 		return "", err
 	}
-	if node == nil {
-		return "", fmt.Errorf("the satellite with id %s does not exist", id)
-	}
+
 	if node.NodeType != "star" {
-		return "", fmt.Errorf("cannot get satellite's public key with non-star id %s", id)
+		return "", errors.Errorf("cannot get satellite's public key with non-star id %s", id)
 	}
 
 	publicKey := node.PublicKeys.(string)
 
 	return publicKey, nil
-
 }
 
 func (s *SmartContract) GetUserPublicKey(ctx tci, id string, macAddr string) (string, error) {
@@ -208,37 +203,35 @@ func (s *SmartContract) GetUserPublicKey(ctx tci, id string, macAddr string) (st
 	if err != nil {
 		return "", err
 	}
-	if node == nil {
-		return "", fmt.Errorf("the user with id %s does not exist", id)
-	}
+
 	if node.NodeType != "user" {
-		return "", fmt.Errorf("cannot get user's public key with non-user id %s", id)
+		return "", errors.Errorf("cannot get user's public key with non-user id %s", id)
 	}
 
 	publicKey, ok := node.PublicKeys.(UserPublicKeys)[macAddr]
 	if !ok {
-		return "", fmt.Errorf("public key of the user with id %s and macAddr %s does not exist. please register first", id, macAddr)
+		return "", errors.Errorf("public key of the user with id %s and macAddr %s does not exist. please register first", id, macAddr)
 	}
 
 	return publicKey, nil
 }
 
-func (s *SmartContract) GetNodeById(ctx tci, id string) (*Node, error) {
-	userJSON, err := ctx.GetStub().GetState(id)
+func (s *SmartContract) GetNodeById(ctx tci, id string) (Node, error) {
+	nodeJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read from world state")
+		return Node{}, errors.Wrap(err, "failed to read from world state")
 	}
-	if userJSON == nil {
-		return nil, fmt.Errorf("user does not exist")
+	if nodeJSON == nil {
+		return Node{}, errors.New("user does not exist")
 	}
 
-	node := &Node{}
-	_ = json.Unmarshal(userJSON, node)
+	node := Node{}
+	_ = json.Unmarshal(nodeJSON, &node)
 
 	return node, nil
 }
 
-func (s *SmartContract) GetAllNodes(ctx tci) ([]*Node, error) {
+func (s *SmartContract) GetAllNodes(ctx tci) ([]Node, error) {
 	startKey := ""
 	endKey := ""
 
@@ -248,7 +241,7 @@ func (s *SmartContract) GetAllNodes(ctx tci) ([]*Node, error) {
 	}
 	defer resultsIterator.Close()
 
-	var nodes []*Node
+	var nodes []Node
 
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
@@ -256,8 +249,8 @@ func (s *SmartContract) GetAllNodes(ctx tci) ([]*Node, error) {
 			return nil, err
 		}
 
-		node := &Node{}
-		err = json.Unmarshal(queryResponse.Value, node)
+		node := Node{}
+		err = json.Unmarshal(queryResponse.Value, &node)
 		if err != nil {
 			return nil, err
 		}
