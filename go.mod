@@ -1,4 +1,4 @@
-module github.com/hiro942/authentication/chaincode
+module github.com/hiro942/elden-chain
 
 go 1.18
 
