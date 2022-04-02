@@ -161,7 +161,7 @@ func (s *SmartContract) UserRegister(ctx tci, id string, macAddr string, publicK
 	return ctx.GetStub().PutState(id, userJSON)
 }
 
-func (s *SmartContract) CreateAccessRecord(ctx tci, id string, macAddr string, satelliteId string, userAccessRecord UserAccessRecord) error {
+func (s *SmartContract) CreateAccessRecord(ctx tci, id string, macAddr string, satelliteId string, userAccessRecordString string) error {
 	node, err := s.GetNodeById(ctx, id)
 	if err != nil {
 		return err
@@ -174,6 +174,9 @@ func (s *SmartContract) CreateAccessRecord(ctx tci, id string, macAddr string, s
 		return errors.Errorf("user with id %s and macAddr %s does not exist. please register first", id, macAddr)
 	}
 	nodePair := NodePair{macAddr, satelliteId}
+
+	var userAccessRecord UserAccessRecord
+	_ = json.Unmarshal([]byte(userAccessRecordString), &userAccessRecord)
 
 	node.AccessRecords = append(node.AccessRecords.(UserAccessRecords)[nodePair], userAccessRecord)
 	node.UpdatedAt = time.Now()
