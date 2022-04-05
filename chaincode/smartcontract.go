@@ -77,22 +77,28 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 			},
 		},
 	}
-	nodes := []Node{
+	nodes := []*Node{
 		{
 			Id:         "star-1",
 			NodeType:   "star",
 			PublicKeys: "star-1-publicKey",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		},
 		{
 			Id:         "star-2",
 			NodeType:   "star",
 			PublicKeys: "star-2-publicKey",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		},
 		{
 			Id:            "user-1",
 			NodeType:      "user",
 			PublicKeys:    userPublicKeys,
 			AccessRecords: userAccessRecords,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		},
 	}
 
@@ -155,7 +161,6 @@ func (s *SmartContract) UserRegister(ctx tci, id string, macAddr string, publicK
 		node.PublicKeys.(UserPublicKeys)[macAddr] = publicKey
 		node.UpdatedAt = time.Now()
 		userJSON, _ = json.Marshal(node)
-
 	}
 
 	return ctx.GetStub().PutState(id, userJSON)
