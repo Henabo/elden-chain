@@ -2,7 +2,6 @@ package chaincode
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 	"github.com/pkg/errors"
 	"time"
@@ -43,139 +42,79 @@ type UserAccessRecord struct {
 // UserAccessRecords indicates access records for a specific device
 type UserAccessRecords map[NodePair][]UserAccessRecord
 
-type Asset struct {
-	AppraisedValue int    `json:"AppraisedValue"`
-	Color          string `json:"Color"`
-	ID             string `json:"ID"`
-	Owner          string `json:"Owner"`
-	Size           int    `json:"Size"`
-}
-
 /**
 ********************************** smart contract implement ***************************************
  */
 
-// InitLedger adds a base set of assets to the ledger
-func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
-	assets := []Asset{
-		{ID: "asset1", Color: "blue", Size: 5, Owner: "Tomoko", AppraisedValue: 300},
-		{ID: "asset2", Color: "red", Size: 5, Owner: "Brad", AppraisedValue: 400},
-		{ID: "asset3", Color: "green", Size: 10, Owner: "Jin Soo", AppraisedValue: 500},
-		{ID: "asset4", Color: "yellow", Size: 10, Owner: "Max", AppraisedValue: 600},
-		{ID: "asset5", Color: "black", Size: 15, Owner: "Adriana", AppraisedValue: 700},
-		{ID: "asset6", Color: "white", Size: 15, Owner: "Michel", AppraisedValue: 800},
+//InitLedger initialize the ledger
+func (s *SmartContract) InitLedger(ctx tci) error {
+	userPublicKeys := UserPublicKeys{
+		"macAddr1": "publicKey1",
+		"macAddr2": "publicKey2",
+	}
+	userAccessRecords := UserAccessRecords{
+		{
+			MacAddr:     "macAddr1",
+			SatelliteId: "satellite-1",
+		}: {
+			{
+				AccessType:          "normal",
+				PreviousSatelliteId: "",
+				StartAt:             time.Now(),
+				EndAt:               time.Now(),
+			},
+			{
+				AccessType:          "fast",
+				PreviousSatelliteId: "",
+				StartAt:             time.Now(),
+				EndAt:               time.Now(),
+			},
+			{
+				AccessType:          "handover",
+				PreviousSatelliteId: "satellite-0",
+				StartAt:             time.Now(),
+				EndAt:               time.Now(),
+			},
+		},
+	}
+	nodes := []Node{
+		{
+			Id:        "satellite-1",
+			NodeType:  "satellite",
+			PublicKey: "satellite-1-publicKey",
+			AccessRecords: nil,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+		{
+			Id:        "satellite-2",
+			NodeType:  "satellite",
+			PublicKey: "satellite-2-publicKey",
+			AccessRecords: nil,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+		{
+			Id:            "user-1",
+			NodeType:      "user",
+			PublicKey:     userPublicKeys,
+			AccessRecords: userAccessRecords,
+			CreatedAt:     time.Now(),
+			UpdatedAt:     time.Now(),
+		},
 	}
 
-	for _, asset := range assets {
-		assetJSON, err := json.Marshal(asset)
-		if err != nil {
-			return err
-		}
+	for _, node := range nodes {
+		nodeJSON, _ := json.Marshal(node)
+		err := ctx.GetStub().PutState(node.Id, nodeJSON)
 
-		err = ctx.GetStub().PutState(asset.ID, assetJSON)
 		if err != nil {
-			return fmt.Errorf("failed to put to world state. %v", err)
+			return errors.Wrap(err, "failed to put into world state")
 		}
 	}
 
 	return nil
 }
-func (s *SmartContract) GetAllNodes(ctx contractapi.TransactionContextInterface) ([]*Asset, error) {
-	// range query with empty string for startKey and endKey does an
-	// open-ended query of all assets in the chaincode namespace.
-	resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
-	if err != nil {
-		return nil, err
-	}
-	defer resultsIterator.Close()
-
-	var assets []*Asset
-	for resultsIterator.HasNext() {
-		queryResponse, err := resultsIterator.Next()
-		if err != nil {
-			return nil, err
-		}
-
-		var asset Asset
-		err = json.Unmarshal(queryResponse.Value, &asset)
-		if err != nil {
-			return nil, err
-		}
-		assets = append(assets, &asset)
-	}
-
-	return assets, nil
-}
-
-// InitLedger initialize the ledger
-//func (s *SmartContract) InitLedger(ctx tci) error {
-//	userPublicKeys := UserPublicKeys{
-//		"macAddr1": "publicKey1",
-//		"macAddr2": "publicKey2",
-//	}
-//	userAccessRecords := UserAccessRecords{
-//		{
-//			MacAddr:     "macAddr1",
-//			SatelliteId: "satellite-1",
-//		}: {
-//			{
-//				AccessType:          "normal",
-//				PreviousSatelliteId: "",
-//				StartAt:             time.Now(),
-//				EndAt:               time.Now(),
-//			},
-//			{
-//				AccessType:          "fast",
-//				PreviousSatelliteId: "",
-//				StartAt:             time.Now(),
-//				EndAt:               time.Now(),
-//			},
-//			{
-//				AccessType:          "handover",
-//				PreviousSatelliteId: "satellite-0",
-//				StartAt:             time.Now(),
-//				EndAt:               time.Now(),
-//			},
-//		},
-//	}
-//	nodes := []Node{
-//		{
-//			Id:        "satellite-1",
-//			NodeType:  "satellite",
-//			PublicKey: "satellite-1-publicKey",
-//			AccessRecords: nil,
-//			CreatedAt: time.Now(),
-//			UpdatedAt: time.Now(),
-//		},
-//		{
-//			Id:        "satellite-2",
-//			NodeType:  "satellite",
-//			PublicKey: "satellite-2-publicKey",
-//			AccessRecords: nil,
-//			CreatedAt: time.Now(),
-//			UpdatedAt: time.Now(),
-//		},
-//		{
-//			Id:            "user-1",
-//			NodeType:      "user",
-//			PublicKey:     userPublicKeys,
-//			AccessRecords: userAccessRecords,
-//			CreatedAt:     time.Now(),
-//			UpdatedAt:     time.Now(),
-//		},
-//	}
-//
-//	for _, node := range nodes {
-//		nodeJSON, _ := json.Marshal(node)
-//		err := ctx.GetStub().PutState(node.Id, nodeJSON)
-//
-//		if err != nil {
-//			return errors.Wrap(err, "failed to put into world state")
-//		}
-//	}
-//
-//	return nil
-//}
 
 func (s *SmartContract) SatelliteRegister(ctx tci, id string, publicKey string) error {
 	exists, err := s.IsNodeExists(ctx, id)
