@@ -3,7 +3,6 @@ package main
 import (
 	chaincodePkg "github.com/hiro942/elden-chain/chaincode"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
-
 	"log"
 )
 

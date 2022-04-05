@@ -16,7 +16,7 @@ type tci contractapi.TransactionContextInterface
 type Node struct {
 	Id            string      `json:"id"`
 	NodeType      string      `json:"nodeType"`
-	PublicKeys    interface{} `json:"publicKeys"`
+	PublicKey    interface{} `json:"publicKey"`
 	AccessRecords interface{} `json:"accessRecords"`
 	CreatedAt     time.Time   `json:"createdAt"`
 	UpdatedAt     time.Time   `json:"updatedAt"`
@@ -77,25 +77,25 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 			},
 		},
 	}
-	nodes := []*Node{
+	nodes := []Node{
 		{
 			Id:         "star-1",
 			NodeType:   "star",
-			PublicKeys: "star-1-publicKey",
+			PublicKey: "star-1-publicKey",
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
 		{
 			Id:         "star-2",
 			NodeType:   "star",
-			PublicKeys: "star-2-publicKey",
+			PublicKey: "star-2-publicKey",
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
 		{
 			Id:            "user-1",
 			NodeType:      "user",
-			PublicKeys:    userPublicKeys,
+			PublicKey:    userPublicKeys,
 			AccessRecords: userAccessRecords,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -103,7 +103,7 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 	}
 
 	for _, node := range nodes {
-		nodeJSON, _ := json.Marshal(node)
+		nodeJSON, _ := json.Marshal(&node)
 		err := ctx.GetStub().PutState(node.Id, nodeJSON)
 
 		if err != nil {
@@ -123,7 +123,7 @@ func (s *SmartContract) SatelliteRegister(ctx tci, id string, publicKey string) 
 	satellite := &Node{
 		Id:            id,
 		NodeType:      "star",
-		PublicKeys:    publicKey,
+		PublicKey:    publicKey,
 		AccessRecords: nil,
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
@@ -146,7 +146,7 @@ func (s *SmartContract) UserRegister(ctx tci, id string, macAddr string, publicK
 		newUser := &Node{
 			Id:            id,
 			NodeType:      "user",
-			PublicKeys:    map[string]string{macAddr: publicKey},
+			PublicKey:    map[string]string{macAddr: publicKey},
 			AccessRecords: UserAccessRecords{},
 			CreatedAt:     time.Now(),
 			UpdatedAt:     time.Now(),
@@ -155,10 +155,10 @@ func (s *SmartContract) UserRegister(ctx tci, id string, macAddr string, publicK
 	}
 
 	if node.NodeType == "user" {
-		if _, ok := node.PublicKeys.(UserPublicKeys)[macAddr]; ok {
+		if _, ok := node.PublicKey.(UserPublicKeys)[macAddr]; ok {
 			return errors.New("you've already registered")
 		}
-		node.PublicKeys.(UserPublicKeys)[macAddr] = publicKey
+		node.PublicKey.(UserPublicKeys)[macAddr] = publicKey
 		node.UpdatedAt = time.Now()
 		userJSON, _ = json.Marshal(node)
 	}
@@ -175,7 +175,7 @@ func (s *SmartContract) CreateAccessRecord(ctx tci, id string, macAddr string, s
 	if node.NodeType != "user" {
 		return errors.New("cannot add access record into a non-user type object")
 	}
-	if _, ok := node.PublicKeys.(UserPublicKeys)[macAddr]; !ok {
+	if _, ok := node.PublicKey.(UserPublicKeys)[macAddr]; !ok {
 		return errors.Errorf("user with id %s and macAddr %s does not exist. please register first", id, macAddr)
 	}
 	nodePair := NodePair{macAddr, satelliteId}
@@ -201,7 +201,7 @@ func (s *SmartContract) GetSatellitePublicKey(ctx tci, id string) (string, error
 		return "", errors.Errorf("cannot get satellite's public key with non-star id %s", id)
 	}
 
-	publicKey := node.PublicKeys.(string)
+	publicKey := node.PublicKey.(string)
 
 	return publicKey, nil
 }
@@ -216,7 +216,7 @@ func (s *SmartContract) GetUserPublicKey(ctx tci, id string, macAddr string) (st
 		return "", errors.Errorf("cannot get user's public key with non-user id %s", id)
 	}
 
-	publicKey, ok := node.PublicKeys.(UserPublicKeys)[macAddr]
+	publicKey, ok := node.PublicKey.(UserPublicKeys)[macAddr]
 	if !ok {
 		return "", errors.Errorf("public key of the user with id %s and macAddr %s does not exist. please register first", id, macAddr)
 	}
