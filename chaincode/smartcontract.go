@@ -13,6 +13,11 @@ type SmartContract struct {
 
 type tci contractapi.TransactionContextInterface
 
+type Node2 struct {
+	Id            string      `json:"id"`
+	NodeType      string      `json:"nodeType"`
+}
+
 type Node struct {
 	Id            string      `json:"id"`
 	NodeType      string      `json:"nodeType"`
@@ -45,6 +50,51 @@ type UserAccessRecords map[NodePair][]UserAccessRecord
 /**
 ********************************** smart contract implement ***************************************
  */
+
+//InitLedger2 initialize the ledger
+func (s *SmartContract) InitLedger2(ctx tci) error {
+	nodes := []Node2 {
+		{"user-1", "user"},
+		{"satellite-1", "satellite"},
+	}
+	for _, node := range nodes {
+		nodeJSON, _ := json.Marshal(node)
+		err := ctx.GetStub().PutState(node.Id, nodeJSON)
+
+		if err != nil {
+			return errors.Wrap(err, "failed to put into world state")
+		}
+	}
+
+	return nil
+}
+func (s *SmartContract) GetAllNodes2(ctx tci) ([]*Node2, error) {
+	startKey := ""
+	endKey := ""
+
+	resultsIterator, err := ctx.GetStub().GetStateByRange(startKey, endKey)
+	if err != nil {
+		return nil, err
+	}
+	defer resultsIterator.Close()
+
+	var nodes []*Node2
+
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+
+		var node Node2
+		_ = json.Unmarshal(queryResponse.Value, &node)
+
+		nodes = append(nodes, &node)
+	}
+
+	return nodes, nil
+}
+
 
 //InitLedger initialize the ledger
 func (s *SmartContract) InitLedger(ctx tci) error {
