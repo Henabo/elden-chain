@@ -16,6 +16,9 @@ type tci contractapi.TransactionContextInterface
 type Node2 struct {
 	Id            string      `json:"id"`
 	NodeType      string      `json:"nodeType"`
+	//PublicKey     interface{} `json:"publicKey"`
+	CreatedAt     time.Time   `json:"createdAt"`
+	UpdatedAt     time.Time   `json:"updatedAt"`
 }
 
 type Node struct {
@@ -54,8 +57,8 @@ type UserAccessRecords map[NodePair][]UserAccessRecord
 //InitLedger2 initialize the ledger
 func (s *SmartContract) InitLedger2(ctx tci) error {
 	nodes := []Node2 {
-		{"user-1", "user"},
-		{"satellite-1", "satellite"},
+		{"user-1", "user", time.Now(), time.Now()},
+		{"satellite-1", "satellite",time.Now(), time.Now()},
 	}
 	for _, node := range nodes {
 		nodeJSON, _ := json.Marshal(node)
