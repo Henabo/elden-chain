@@ -13,21 +13,13 @@ type SmartContract struct {
 
 type tci contractapi.TransactionContextInterface
 
-type Node2 struct {
-	Id            string      `json:"id"`
-	NodeType      string      `json:"nodeType"`
-	PublicKey     interface{} `json:"publicKey"`
-	//CreatedAt     time.Time   `json:"createdAt"`
-	//UpdatedAt     time.Time   `json:"updatedAt"`
-}
-
 type Node struct {
 	Id            string      `json:"id"`
 	NodeType      string      `json:"nodeType"`
 	PublicKey     interface{} `json:"publicKey"`
 	AccessRecords interface{} `json:"accessRecords"`
-	CreatedAt     time.Time   `json:"createdAt"`
-	UpdatedAt     time.Time   `json:"updatedAt"`
+	CreatedAt     string   `json:"createdAt"`
+	UpdatedAt     string   `json:"updatedAt"`
 }
 
 // UserPublicKeys is the struct of user's public key
@@ -43,60 +35,18 @@ type NodePair struct {
 type UserAccessRecord struct {
 	AccessType          string    `json:"accessType"`          // 接入方式，normal/fast/handover
 	PreviousSatelliteId string    `json:"previousSatelliteId"` // handover接入方式下，原卫星id
-	StartAt             time.Time `json:"startAt"`             // 访问开始时间
-	EndAt               time.Time `json:"endAt"`               // 访问结束时间
+	StartAt             string `json:"startAt"`             // 访问开始时间
+	EndAt               string `json:"endAt"`               // 访问结束时间
 }
 
 // UserAccessRecords indicates access records for a specific device
 type UserAccessRecords map[NodePair][]UserAccessRecord
 
+const TIME_LAYOUT = "2006-01-02 15:04:05"
+
 /**
 ********************************** smart contract implement ***************************************
  */
-
-//InitLedger2 initialize the ledger
-func (s *SmartContract) InitLedger2(ctx tci) error {
-	nodes := []Node2 {
-		{"user-1", "user", map[string]string{"macAddr1":"123", "macAddr2":"456"}},
-		{"satellite-1", "satellite", "123456"},
-	}
-	for _, node := range nodes {
-		nodeJSON, _ := json.Marshal(node)
-		err := ctx.GetStub().PutState(node.Id, nodeJSON)
-
-		if err != nil {
-			return errors.Wrap(err, "failed to put into world state")
-		}
-	}
-
-	return nil
-}
-func (s *SmartContract) GetAllNodes2(ctx tci) ([]*Node2, error) {
-	startKey := ""
-	endKey := ""
-
-	resultsIterator, err := ctx.GetStub().GetStateByRange(startKey, endKey)
-	if err != nil {
-		return nil, err
-	}
-	defer resultsIterator.Close()
-
-	var nodes []*Node2
-
-	for resultsIterator.HasNext() {
-		queryResponse, err := resultsIterator.Next()
-		if err != nil {
-			return nil, err
-		}
-
-		var node Node2
-		_ = json.Unmarshal(queryResponse.Value, &node)
-
-		nodes = append(nodes, &node)
-	}
-
-	return nodes, nil
-}
 
 
 //InitLedger initialize the ledger
@@ -113,20 +63,20 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 			{
 				AccessType:          "normal",
 				PreviousSatelliteId: "",
-				StartAt:             time.Now(),
-				EndAt:               time.Now(),
+				StartAt:             time.Now().Format(TIME_LAYOUT),
+				EndAt:               time.Now().Format(TIME_LAYOUT),
 			},
 			{
 				AccessType:          "fast",
 				PreviousSatelliteId: "",
-				StartAt:             time.Now(),
-				EndAt:               time.Now(),
+				StartAt:             time.Now().Format(TIME_LAYOUT),
+				EndAt:               time.Now().Format(TIME_LAYOUT),
 			},
 			{
 				AccessType:          "handover",
 				PreviousSatelliteId: "satellite-0",
-				StartAt:             time.Now(),
-				EndAt:               time.Now(),
+				StartAt:             time.Now().Format(TIME_LAYOUT),
+				EndAt:               time.Now().Format(TIME_LAYOUT),
 			},
 		},
 	}
@@ -136,24 +86,24 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 			NodeType:  "satellite",
 			PublicKey: "satellite-1-publicKey",
 			AccessRecords: nil,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			CreatedAt: time.Now().Format(TIME_LAYOUT),
+			UpdatedAt: time.Now().Format(TIME_LAYOUT),
 		},
 		{
 			Id:        "satellite-2",
 			NodeType:  "satellite",
 			PublicKey: "satellite-2-publicKey",
 			AccessRecords: nil,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			CreatedAt: time.Now().Format(TIME_LAYOUT),
+			UpdatedAt: time.Now().Format(TIME_LAYOUT),
 		},
 		{
 			Id:            "user-1",
 			NodeType:      "user",
 			PublicKey:     userPublicKeys,
 			AccessRecords: userAccessRecords,
-			CreatedAt:     time.Now(),
-			UpdatedAt:     time.Now(),
+			CreatedAt:     time.Now().Format(TIME_LAYOUT),
+			UpdatedAt:     time.Now().Format(TIME_LAYOUT),
 		},
 	}
 
@@ -183,8 +133,8 @@ func (s *SmartContract) SatelliteRegister(ctx tci, id string, publicKey string) 
 		NodeType:      "satellite",
 		PublicKey:     publicKey,
 		AccessRecords: nil,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
+		CreatedAt:     time.Now().Format(TIME_LAYOUT),
+		UpdatedAt:     time.Now().Format(TIME_LAYOUT),
 	}
 
 	satelliteJSON, _ := json.Marshal(satellite)
@@ -212,7 +162,7 @@ func (s *SmartContract) UserRegister(ctx tci, id string, macAddr string, publicK
 			return errors.New("you've already registered (public key exists)")
 		}
 		node.PublicKey.(UserPublicKeys)[macAddr] = publicKey
-		node.UpdatedAt = time.Now()
+		node.UpdatedAt = time.Now().Format(TIME_LAYOUT)
 
 		userJSON, _ = json.Marshal(*node)
 	} else {
@@ -221,8 +171,8 @@ func (s *SmartContract) UserRegister(ctx tci, id string, macAddr string, publicK
 			NodeType:      "user",
 			PublicKey:     map[string]string{macAddr:publicKey},
 			AccessRecords: UserAccessRecords{},
-			CreatedAt:     time.Now(),
-			UpdatedAt:     time.Now(),
+			CreatedAt:     time.Now().Format(TIME_LAYOUT),
+			UpdatedAt:     time.Now().Format(TIME_LAYOUT),
 		}
 		userJSON, _ = json.Marshal(newUser)
 	}
@@ -248,7 +198,7 @@ func (s *SmartContract) CreateAccessRecord(ctx tci, id string, macAddr string, s
 	_ = json.Unmarshal([]byte(userAccessRecordString), &userAccessRecord)
 
 	node.AccessRecords = append(node.AccessRecords.(UserAccessRecords)[nodePair], userAccessRecord)
-	node.UpdatedAt = time.Now()
+	node.UpdatedAt = time.Now().Format(TIME_LAYOUT)
 
 	nodeJSON, _ := json.Marshal(*node)
 
