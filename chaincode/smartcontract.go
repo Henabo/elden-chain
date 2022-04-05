@@ -18,8 +18,8 @@ type Node struct {
 	NodeType      string      `json:"nodeType"`
 	PublicKey     interface{} `json:"publicKey"`
 	AccessRecords interface{} `json:"accessRecords"`
-	CreatedAt     string   `json:"createdAt"`
-	UpdatedAt     string   `json:"updatedAt"`
+	CreatedAt     string      `json:"createdAt"`
+	UpdatedAt     string      `json:"updatedAt"`
 }
 
 // UserPublicKeys is the struct of user's public key
@@ -33,8 +33,8 @@ type NodePair struct {
 
 // UserAccessRecord is single access log
 type UserAccessRecord struct {
-	AccessType          string    `json:"accessType"`          // 接入方式，normal/fast/handover
-	PreviousSatelliteId string    `json:"previousSatelliteId"` // handover接入方式下，原卫星id
+	AccessType          string `json:"accessType"`          // 接入方式，normal/fast/handover
+	PreviousSatelliteId string `json:"previousSatelliteId"` // handover接入方式下，原卫星id
 	StartAt             string `json:"startAt"`             // 访问开始时间
 	EndAt               string `json:"endAt"`               // 访问结束时间
 }
@@ -47,7 +47,6 @@ const TIME_LAYOUT = "2006-01-02 15:04:05"
 /**
 ********************************** smart contract implement ***************************************
  */
-
 
 //InitLedger initialize the ledger
 func (s *SmartContract) InitLedger(ctx tci) error {
@@ -82,22 +81,6 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 	}
 	nodes := []Node{
 		{
-			Id:        "satellite-1",
-			NodeType:  "satellite",
-			PublicKey: "satellite-1-publicKey",
-			AccessRecords: nil,
-			CreatedAt: time.Now().Format(TIME_LAYOUT),
-			UpdatedAt: time.Now().Format(TIME_LAYOUT),
-		},
-		{
-			Id:        "satellite-2",
-			NodeType:  "satellite",
-			PublicKey: "satellite-2-publicKey",
-			AccessRecords: nil,
-			CreatedAt: time.Now().Format(TIME_LAYOUT),
-			UpdatedAt: time.Now().Format(TIME_LAYOUT),
-		},
-		{
 			Id:            "user-1",
 			NodeType:      "user",
 			PublicKey:     userPublicKeys,
@@ -105,6 +88,23 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 			CreatedAt:     time.Now().Format(TIME_LAYOUT),
 			UpdatedAt:     time.Now().Format(TIME_LAYOUT),
 		},
+		{
+			Id:            "satellite-1",
+			NodeType:      "satellite",
+			PublicKey:     "satellite-1-publicKey",
+			AccessRecords: "",
+			CreatedAt:     time.Now().Format(TIME_LAYOUT),
+			UpdatedAt:     time.Now().Format(TIME_LAYOUT),
+		},
+		//{
+		//	Id:            "satellite-2",
+		//	NodeType:      "satellite",
+		//	PublicKey:     "satellite-2-publicKey",
+		//	AccessRecords: nil,
+		//	CreatedAt:     time.Now().Format(TIME_LAYOUT),
+		//	UpdatedAt:     time.Now().Format(TIME_LAYOUT),
+		//},
+
 	}
 
 	for _, node := range nodes {
@@ -169,7 +169,7 @@ func (s *SmartContract) UserRegister(ctx tci, id string, macAddr string, publicK
 		newUser := Node{
 			Id:            id,
 			NodeType:      "user",
-			PublicKey:     map[string]string{macAddr:publicKey},
+			PublicKey:     map[string]string{macAddr: publicKey},
 			AccessRecords: UserAccessRecords{},
 			CreatedAt:     time.Now().Format(TIME_LAYOUT),
 			UpdatedAt:     time.Now().Format(TIME_LAYOUT),
