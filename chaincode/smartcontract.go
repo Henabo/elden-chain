@@ -103,7 +103,7 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 	}
 
 	for _, node := range nodes {
-		nodeJSON, _ := json.Marshal(&node)
+		nodeJSON, _ := json.Marshal(node)
 		err := ctx.GetStub().PutState(node.Id, nodeJSON)
 
 		if err != nil {
@@ -120,7 +120,7 @@ func (s *SmartContract) SatelliteRegister(ctx tci, id string, publicKey string) 
 		return err
 	}
 
-	satellite := &Node{
+	satellite := Node{
 		Id:            id,
 		NodeType:      "star",
 		PublicKey:    publicKey,
@@ -143,7 +143,7 @@ func (s *SmartContract) UserRegister(ctx tci, id string, macAddr string, publicK
 	var userJSON []byte
 
 	if node.Id == "" {
-		newUser := &Node{
+		newUser := 	Node{
 			Id:            id,
 			NodeType:      "user",
 			PublicKey:    map[string]string{macAddr: publicKey},
@@ -186,7 +186,7 @@ func (s *SmartContract) CreateAccessRecord(ctx tci, id string, macAddr string, s
 	node.AccessRecords = append(node.AccessRecords.(UserAccessRecords)[nodePair], userAccessRecord)
 	node.UpdatedAt = time.Now()
 
-	nodeJSON, _ := json.Marshal(&node)
+	nodeJSON, _ := json.Marshal(node)
 
 	return ctx.GetStub().PutState(id, nodeJSON)
 }
