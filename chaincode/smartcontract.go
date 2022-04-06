@@ -104,7 +104,7 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 	for _, node := range nodes {
 		nodeJSON, err := json.Marshal(node)
 		if err != nil {
-			return errors.Wrap(err, "failed to marshal data into bytes")
+			return errors.Wrap(err, "json marshal error")
 		}
 
 		err = ctx.GetStub().PutState(node.Id, nodeJSON)
@@ -134,7 +134,10 @@ func (s *SmartContract) SatelliteRegister(ctx tci, id string, publicKey string) 
 		UpdatedAt:     time.Now().Format(TimeTemplate),
 	}
 
-	satelliteJSON, _ := json.Marshal(satellite)
+	satelliteJSON, err := json.Marshal(satellite)
+	if err != nil {
+		return errors.Wrap(err, "json marshal error")
+	}
 
 	return ctx.GetStub().PutState(id, satelliteJSON)
 }
@@ -161,7 +164,10 @@ func (s *SmartContract) UserRegister(ctx tci, id string, macAddr string, publicK
 		node.PublicKey.(UserPublicKeys)[macAddr] = publicKey
 		node.UpdatedAt = time.Now().Format(TimeTemplate)
 
-		userJSON, _ = json.Marshal(*node)
+		userJSON, err = json.Marshal(*node)
+		if err != nil {
+			return errors.Wrap(err, "json marshal error")
+		}
 	} else {
 		newUser := Node{
 			Id:            id,
@@ -171,7 +177,10 @@ func (s *SmartContract) UserRegister(ctx tci, id string, macAddr string, publicK
 			CreatedAt:     time.Now().Format(TimeTemplate),
 			UpdatedAt:     time.Now().Format(TimeTemplate),
 		}
-		userJSON, _ = json.Marshal(newUser)
+		userJSON, err = json.Marshal(newUser)
+		if err != nil {
+			return errors.Wrap(err, "json marshal error")
+		}
 	}
 
 	return ctx.GetStub().PutState(id, userJSON)
@@ -191,12 +200,18 @@ func (s *SmartContract) CreateAccessRecord(ctx tci, id string, macAddr string, u
 	}
 
 	var userAccessRecord UserAccessRecord
-	_ = json.Unmarshal([]byte(userAccessRecordString), &userAccessRecord)
+	err = json.Unmarshal([]byte(userAccessRecordString), &userAccessRecord)
+	if err != nil {
+		return errors.Wrap(err, "json unmarshal error")
+	}
 
 	node.AccessRecords = append(node.AccessRecords.(UserAccessRecords)[macAddr], userAccessRecord)
 	node.UpdatedAt = time.Now().Format(TimeTemplate)
 
-	nodeJSON, _ := json.Marshal(*node)
+	nodeJSON, err := json.Marshal(*node)
+	if err != nil {
+		return errors.Wrap(err, "json marshal error")
+	}
 
 	return ctx.GetStub().PutState(id, nodeJSON)
 }
@@ -253,7 +268,10 @@ func (s *SmartContract) GetNodeById(ctx tci, id string) (*Node, error) {
 	}
 
 	node := Node{}
-	_ = json.Unmarshal(nodeJSON, &node)
+	err = json.Unmarshal(nodeJSON, &node)
+	if err != nil {
+		return nil, errors.Wrap(err, "json unmarshal error")
+	}
 
 	return &node, nil
 }
@@ -277,7 +295,10 @@ func (s *SmartContract) GetAllNodes(ctx tci) ([]*Node, error) {
 		}
 
 		var node Node
-		_ = json.Unmarshal(queryResponse.Value, &node)
+		err = json.Unmarshal(queryResponse.Value, &node)
+		if err != nil {
+			return nil, errors.Wrap(err, "json unmarshal error")
+		}
 
 		nodes = append(nodes, &node)
 	}
