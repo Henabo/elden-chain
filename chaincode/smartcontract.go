@@ -13,15 +13,6 @@ type SmartContract struct {
 
 type tci contractapi.TransactionContextInterface
 
-type Node struct {
-	Id            string      `json:"id"`
-	NodeType      string      `json:"nodeType"`
-	PublicKey     PublicKeys  `json:"publicKey"`
-	AccessRecords interface{} `json:"accessRecords"`
-	CreatedAt     string      `json:"createdAt"`
-	UpdatedAt     string      `json:"updatedAt"`
-}
-
 // PublicKeys indicates the structure how public keys are saved
 type PublicKeys map[string]string
 
@@ -36,6 +27,15 @@ type UserAccessRecord struct {
 
 // UserAccessRecords indicates access records for a specific device
 type UserAccessRecords map[string][]UserAccessRecord
+
+type Node struct {
+	Id           string            `json:"id"`
+	NodeType     string            `json:"nodeType"`
+	PublicKey    PublicKeys        `json:"publicKey"`
+	AccessRecord UserAccessRecords `json:"accessRecord"`
+	CreatedAt    string            `json:"createdAt"`
+	UpdatedAt    string            `json:"updatedAt"`
+}
 
 const (
 	TimeTemplate          = "2006-01-02 15:04:05"
@@ -79,28 +79,28 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 	}
 	nodes := []Node{
 		{
-			Id:            "user-1",
-			NodeType:      "user",
-			PublicKey:     userPublicKeys,
-			AccessRecords: userAccessRecords,
-			CreatedAt:     time.Now().Format(TimeTemplate),
-			UpdatedAt:     time.Now().Format(TimeTemplate),
+			Id:           "user-1",
+			NodeType:     "user",
+			PublicKey:    userPublicKeys,
+			AccessRecord: userAccessRecords,
+			CreatedAt:    time.Now().Format(TimeTemplate),
+			UpdatedAt:    time.Now().Format(TimeTemplate),
 		},
 		{
-			Id:            "satellite-1",
-			NodeType:      "satellite",
-			PublicKey:     PublicKeys{SatelliteMacAddrAlias: "satellite-1-publicKey"},
-			AccessRecords: nil,
-			CreatedAt:     time.Now().Format(TimeTemplate),
-			UpdatedAt:     time.Now().Format(TimeTemplate),
+			Id:           "satellite-1",
+			NodeType:     "satellite",
+			PublicKey:    PublicKeys{SatelliteMacAddrAlias: "satellite-1-publicKey"},
+			AccessRecord: nil,
+			CreatedAt:    time.Now().Format(TimeTemplate),
+			UpdatedAt:    time.Now().Format(TimeTemplate),
 		},
 		{
-			Id:            "satellite-2",
-			NodeType:      "satellite",
-			PublicKey:     PublicKeys{SatelliteMacAddrAlias: "satellite-2-publicKey"},
-			AccessRecords: nil,
-			CreatedAt:     time.Now().Format(TimeTemplate),
-			UpdatedAt:     time.Now().Format(TimeTemplate),
+			Id:           "satellite-2",
+			NodeType:     "satellite",
+			PublicKey:    PublicKeys{SatelliteMacAddrAlias: "satellite-2-publicKey"},
+			AccessRecord: nil,
+			CreatedAt:    time.Now().Format(TimeTemplate),
+			UpdatedAt:    time.Now().Format(TimeTemplate),
 		},
 	}
 
@@ -129,12 +129,12 @@ func (s *SmartContract) SatelliteRegister(ctx tci, id string, publicKey string) 
 	}
 
 	satellite := Node{
-		Id:            id,
-		NodeType:      "satellite",
-		PublicKey:     PublicKeys{SatelliteMacAddrAlias: publicKey},
-		AccessRecords: nil,
-		CreatedAt:     time.Now().Format(TimeTemplate),
-		UpdatedAt:     time.Now().Format(TimeTemplate),
+		Id:           id,
+		NodeType:     "satellite",
+		PublicKey:    PublicKeys{SatelliteMacAddrAlias: publicKey},
+		AccessRecord: nil,
+		CreatedAt:    time.Now().Format(TimeTemplate),
+		UpdatedAt:    time.Now().Format(TimeTemplate),
 	}
 
 	satelliteJSON, err := json.Marshal(satellite)
@@ -173,12 +173,12 @@ func (s *SmartContract) UserRegister(ctx tci, id string, macAddr string, publicK
 		}
 	} else {
 		newUser := Node{
-			Id:            id,
-			NodeType:      "user",
-			PublicKey:     map[string]string{macAddr: publicKey},
-			AccessRecords: UserAccessRecords{},
-			CreatedAt:     time.Now().Format(TimeTemplate),
-			UpdatedAt:     time.Now().Format(TimeTemplate),
+			Id:           id,
+			NodeType:     "user",
+			PublicKey:    map[string]string{macAddr: publicKey},
+			AccessRecord: UserAccessRecords{},
+			CreatedAt:    time.Now().Format(TimeTemplate),
+			UpdatedAt:    time.Now().Format(TimeTemplate),
 		}
 		userJSON, err = json.Marshal(newUser)
 		if err != nil {
@@ -208,7 +208,7 @@ func (s *SmartContract) CreateAccessRecord(ctx tci, id string, macAddr string, u
 		return errors.Wrap(err, "json unmarshal error")
 	}
 
-	node.AccessRecords = append(node.AccessRecords.(UserAccessRecords)[macAddr], userAccessRecord)
+	node.AccessRecord[macAddr] = append(node.AccessRecord[macAddr], userAccessRecord)
 	node.UpdatedAt = time.Now().Format(TimeTemplate)
 
 	nodeJSON, err := json.Marshal(*node)
