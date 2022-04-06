@@ -25,29 +25,19 @@ type Node struct {
 // UserPublicKeys is the struct of user's public key
 type UserPublicKeys map[string]string
 
-// NodePair indicates the communication parties
-type NodePair struct {
-	MacAddr     string `json:"macAddr"`
-	SatelliteId string `json:"satelliteId"`
-}
-
 // UserAccessRecord is single access log
 type UserAccessRecord struct {
-	AccessType          string `json:"accessType"`          // 接入方式，normal/fast/handover
-	PreviousSatelliteId string `json:"previousSatelliteId"` // handover接入方式下，原卫星id
-	StartAt             string `json:"startAt"`             // 访问开始时间
-	EndAt               string `json:"endAt"`               // 访问结束时间
+	AccessType          string `json:"accessType"`          // "normal" || "fast" || "handover"
+	SatelliteId         string `json:"satelliteId"`         // current satellite
+	PreviousSatelliteId string `json:"previousSatelliteId"` // previous satellite in handover
+	StartAt             string `json:"startAt"`             // when to start
+	EndAt               string `json:"endAt"`               // when to end
 }
 
 // UserAccessRecords indicates access records for a specific device
-type UserAccessRecords map[NodePair][]UserAccessRecord
+type UserAccessRecords map[string][]UserAccessRecord
 
-type Testt struct {
-	Name string `json:"name"`
-	Age string `json:"age"`
-}
-
-const TIME_LAYOUT = "2006-01-02 15:04:05"
+const TimeTemplate = "2006-01-02 15:04:05"
 
 /**
 ********************************** smart contract implement ***************************************
@@ -59,62 +49,61 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 		"macAddr1": "publicKey1",
 		"macAddr2": "publicKey2",
 	}
-	//userAccessRecords := UserAccessRecords{
-	//	{
-	//		MacAddr:     "macAddr1",
-	//		SatelliteId: "satellite-1",
-	//	}: {
-	//		{
-	//			AccessType:          "normal",
-	//			PreviousSatelliteId: "",
-	//			StartAt:             time.Now().Format(TIME_LAYOUT),
-	//			EndAt:               time.Now().Format(TIME_LAYOUT),
-	//		},
-	//		{
-	//			AccessType:          "fast",
-	//			PreviousSatelliteId: "",
-	//			StartAt:             time.Now().Format(TIME_LAYOUT),
-	//			EndAt:               time.Now().Format(TIME_LAYOUT),
-	//		},
-	//		{
-	//			AccessType:          "handover",
-	//			PreviousSatelliteId: "satellite-0",
-	//			StartAt:             time.Now().Format(TIME_LAYOUT),
-	//			EndAt:               time.Now().Format(TIME_LAYOUT),
-	//		},
-	//	},
-	//}
+	userAccessRecords := UserAccessRecords{
+		"macAddr1": {
+			{
+				AccessType:          "normal",
+				SatelliteId:         "satellite-1",
+				PreviousSatelliteId: "",
+				StartAt:             time.Now().Format(TimeTemplate),
+				EndAt:               time.Now().Format(TimeTemplate),
+			},
+			{
+				AccessType:          "fast",
+				SatelliteId:         "satellite-1",
+				PreviousSatelliteId: "",
+				StartAt:             time.Now().Format(TimeTemplate),
+				EndAt:               time.Now().Format(TimeTemplate),
+			},
+			{
+				AccessType:          "handover",
+				SatelliteId:         "satellite-1",
+				PreviousSatelliteId: "satellite-0",
+				StartAt:             time.Now().Format(TimeTemplate),
+				EndAt:               time.Now().Format(TimeTemplate),
+			},
+		},
+	}
 	nodes := []Node{
 		{
 			Id:            "user-1",
 			NodeType:      "user",
 			PublicKey:     userPublicKeys,
-			AccessRecords: Testt{"hiro","23"},
-			CreatedAt:     time.Now().Format(TIME_LAYOUT),
-			UpdatedAt:     time.Now().Format(TIME_LAYOUT),
+			AccessRecords: userAccessRecords,
+			CreatedAt:     time.Now().Format(TimeTemplate),
+			UpdatedAt:     time.Now().Format(TimeTemplate),
 		},
-		//{
-		//	Id:            "satellite-1",
-		//	NodeType:      "satellite",
-		//	PublicKey:     "satellite-1-publicKey",
-		//	AccessRecords: "",
-		//	CreatedAt:     time.Now().Format(TIME_LAYOUT),
-		//	UpdatedAt:     time.Now().Format(TIME_LAYOUT),
-		//},
-		//{
-		//	Id:            "satellite-2",
-		//	NodeType:      "satellite",
-		//	PublicKey:     "satellite-2-publicKey",
-		//	AccessRecords: nil,
-		//	CreatedAt:     time.Now().Format(TIME_LAYOUT),
-		//	UpdatedAt:     time.Now().Format(TIME_LAYOUT),
-		//},
-
+		{
+			Id:            "satellite-1",
+			NodeType:      "satellite",
+			PublicKey:     "satellite-1-publicKey",
+			AccessRecords: nil,
+			CreatedAt:     time.Now().Format(TimeTemplate),
+			UpdatedAt:     time.Now().Format(TimeTemplate),
+		},
+		{
+			Id:            "satellite-2",
+			NodeType:      "satellite",
+			PublicKey:     "satellite-2-publicKey",
+			AccessRecords: nil,
+			CreatedAt:     time.Now().Format(TimeTemplate),
+			UpdatedAt:     time.Now().Format(TimeTemplate),
+		},
 	}
 
 	for _, node := range nodes {
 		nodeJSON, err := json.Marshal(node)
-		if err != nil{
+		if err != nil {
 			return errors.Wrap(err, "failed to marshal data into bytes")
 		}
 
@@ -141,8 +130,8 @@ func (s *SmartContract) SatelliteRegister(ctx tci, id string, publicKey string) 
 		NodeType:      "satellite",
 		PublicKey:     publicKey,
 		AccessRecords: nil,
-		CreatedAt:     time.Now().Format(TIME_LAYOUT),
-		UpdatedAt:     time.Now().Format(TIME_LAYOUT),
+		CreatedAt:     time.Now().Format(TimeTemplate),
+		UpdatedAt:     time.Now().Format(TimeTemplate),
 	}
 
 	satelliteJSON, _ := json.Marshal(satellite)
@@ -170,7 +159,7 @@ func (s *SmartContract) UserRegister(ctx tci, id string, macAddr string, publicK
 			return errors.New("you've already registered (public key exists)")
 		}
 		node.PublicKey.(UserPublicKeys)[macAddr] = publicKey
-		node.UpdatedAt = time.Now().Format(TIME_LAYOUT)
+		node.UpdatedAt = time.Now().Format(TimeTemplate)
 
 		userJSON, _ = json.Marshal(*node)
 	} else {
@@ -179,8 +168,8 @@ func (s *SmartContract) UserRegister(ctx tci, id string, macAddr string, publicK
 			NodeType:      "user",
 			PublicKey:     map[string]string{macAddr: publicKey},
 			AccessRecords: UserAccessRecords{},
-			CreatedAt:     time.Now().Format(TIME_LAYOUT),
-			UpdatedAt:     time.Now().Format(TIME_LAYOUT),
+			CreatedAt:     time.Now().Format(TimeTemplate),
+			UpdatedAt:     time.Now().Format(TimeTemplate),
 		}
 		userJSON, _ = json.Marshal(newUser)
 	}
@@ -188,7 +177,7 @@ func (s *SmartContract) UserRegister(ctx tci, id string, macAddr string, publicK
 	return ctx.GetStub().PutState(id, userJSON)
 }
 
-func (s *SmartContract) CreateAccessRecord(ctx tci, id string, macAddr string, satelliteId string, userAccessRecordString string) error {
+func (s *SmartContract) CreateAccessRecord(ctx tci, id string, macAddr string, userAccessRecordString string) error {
 	node, err := s.GetNodeById(ctx, id)
 	if err != nil {
 		return err
@@ -200,13 +189,12 @@ func (s *SmartContract) CreateAccessRecord(ctx tci, id string, macAddr string, s
 	if _, ok := node.PublicKey.(UserPublicKeys)[macAddr]; !ok {
 		return errors.Errorf("user with id %s and macAddr %s does not exist. please register first", id, macAddr)
 	}
-	nodePair := NodePair{macAddr, satelliteId}
 
 	var userAccessRecord UserAccessRecord
 	_ = json.Unmarshal([]byte(userAccessRecordString), &userAccessRecord)
 
-	node.AccessRecords = append(node.AccessRecords.(UserAccessRecords)[nodePair], userAccessRecord)
-	node.UpdatedAt = time.Now().Format(TIME_LAYOUT)
+	node.AccessRecords = append(node.AccessRecords.(UserAccessRecords)[macAddr], userAccessRecord)
+	node.UpdatedAt = time.Now().Format(TimeTemplate)
 
 	nodeJSON, _ := json.Marshal(*node)
 
