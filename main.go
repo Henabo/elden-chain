@@ -4,9 +4,12 @@ import (
 	chaincodePkg "github.com/hiro942/elden-chain/chaincode"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 	"log"
+	"time"
 )
 
 func main() {
+	time.Local = time.FixedZone("CST", 8*3600)
+
 	chaincode, err := contractapi.NewChaincode(new(chaincodePkg.SmartContract))
 
 	if err != nil {
