@@ -42,6 +42,11 @@ type UserAccessRecord struct {
 // UserAccessRecords indicates access records for a specific device
 type UserAccessRecords map[NodePair][]UserAccessRecord
 
+type Testt struct {
+	Name string `json:"name"`
+	Age string `json:"age"`
+}
+
 const TIME_LAYOUT = "2006-01-02 15:04:05"
 
 /**
@@ -54,37 +59,37 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 		"macAddr1": "publicKey1",
 		"macAddr2": "publicKey2",
 	}
-	userAccessRecords := UserAccessRecords{
-		{
-			MacAddr:     "macAddr1",
-			SatelliteId: "satellite-1",
-		}: {
-			{
-				AccessType:          "normal",
-				PreviousSatelliteId: "",
-				StartAt:             time.Now().Format(TIME_LAYOUT),
-				EndAt:               time.Now().Format(TIME_LAYOUT),
-			},
-			{
-				AccessType:          "fast",
-				PreviousSatelliteId: "",
-				StartAt:             time.Now().Format(TIME_LAYOUT),
-				EndAt:               time.Now().Format(TIME_LAYOUT),
-			},
-			{
-				AccessType:          "handover",
-				PreviousSatelliteId: "satellite-0",
-				StartAt:             time.Now().Format(TIME_LAYOUT),
-				EndAt:               time.Now().Format(TIME_LAYOUT),
-			},
-		},
-	}
+	//userAccessRecords := UserAccessRecords{
+	//	{
+	//		MacAddr:     "macAddr1",
+	//		SatelliteId: "satellite-1",
+	//	}: {
+	//		{
+	//			AccessType:          "normal",
+	//			PreviousSatelliteId: "",
+	//			StartAt:             time.Now().Format(TIME_LAYOUT),
+	//			EndAt:               time.Now().Format(TIME_LAYOUT),
+	//		},
+	//		{
+	//			AccessType:          "fast",
+	//			PreviousSatelliteId: "",
+	//			StartAt:             time.Now().Format(TIME_LAYOUT),
+	//			EndAt:               time.Now().Format(TIME_LAYOUT),
+	//		},
+	//		{
+	//			AccessType:          "handover",
+	//			PreviousSatelliteId: "satellite-0",
+	//			StartAt:             time.Now().Format(TIME_LAYOUT),
+	//			EndAt:               time.Now().Format(TIME_LAYOUT),
+	//		},
+	//	},
+	//}
 	nodes := []Node{
 		{
 			Id:            "user-1",
 			NodeType:      "user",
 			PublicKey:     userPublicKeys,
-			AccessRecords: userAccessRecords,
+			AccessRecords: Testt{"hiro","23"},
 			CreatedAt:     time.Now().Format(TIME_LAYOUT),
 			UpdatedAt:     time.Now().Format(TIME_LAYOUT),
 		},
