@@ -88,14 +88,14 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 			CreatedAt:     time.Now().Format(TIME_LAYOUT),
 			UpdatedAt:     time.Now().Format(TIME_LAYOUT),
 		},
-		{
-			Id:            "satellite-1",
-			NodeType:      "satellite",
-			PublicKey:     "satellite-1-publicKey",
-			AccessRecords: "",
-			CreatedAt:     time.Now().Format(TIME_LAYOUT),
-			UpdatedAt:     time.Now().Format(TIME_LAYOUT),
-		},
+		//{
+		//	Id:            "satellite-1",
+		//	NodeType:      "satellite",
+		//	PublicKey:     "satellite-1-publicKey",
+		//	AccessRecords: "",
+		//	CreatedAt:     time.Now().Format(TIME_LAYOUT),
+		//	UpdatedAt:     time.Now().Format(TIME_LAYOUT),
+		//},
 		//{
 		//	Id:            "satellite-2",
 		//	NodeType:      "satellite",
