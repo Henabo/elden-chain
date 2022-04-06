@@ -113,9 +113,12 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 	}
 
 	for _, node := range nodes {
-		nodeJSON, _ := json.Marshal(node)
-		err := ctx.GetStub().PutState(node.Id, nodeJSON)
+		nodeJSON, err := json.Marshal(node)
+		if err != nil{
+			return errors.Wrap(err, "failed to marshal data into bytes")
+		}
 
+		err = ctx.GetStub().PutState(node.Id, nodeJSON)
 		if err != nil {
 			return errors.Wrap(err, "failed to put into world state")
 		}
