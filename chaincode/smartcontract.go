@@ -16,14 +16,14 @@ type tci contractapi.TransactionContextInterface
 type Node struct {
 	Id            string      `json:"id"`
 	NodeType      string      `json:"nodeType"`
-	PublicKey     interface{} `json:"publicKey"`
+	PublicKey     PublicKeys  `json:"publicKey"`
 	AccessRecords interface{} `json:"accessRecords"`
 	CreatedAt     string      `json:"createdAt"`
 	UpdatedAt     string      `json:"updatedAt"`
 }
 
-// UserPublicKeys is the struct of user's public key
-type UserPublicKeys map[string]string
+// PublicKeys indicates the structure how public keys are saved
+type PublicKeys map[string]string
 
 // UserAccessRecord is single access log
 type UserAccessRecord struct {
@@ -37,7 +37,10 @@ type UserAccessRecord struct {
 // UserAccessRecords indicates access records for a specific device
 type UserAccessRecords map[string][]UserAccessRecord
 
-const TimeTemplate = "2006-01-02 15:04:05"
+const (
+	TimeTemplate          = "2006-01-02 15:04:05"
+	SatelliteMacAddrAlias = "elden"
+)
 
 /**
 ********************************** smart contract implement ***************************************
@@ -45,7 +48,7 @@ const TimeTemplate = "2006-01-02 15:04:05"
 
 //InitLedger initialize the ledger
 func (s *SmartContract) InitLedger(ctx tci) error {
-	userPublicKeys := UserPublicKeys{
+	userPublicKeys := PublicKeys{
 		"macAddr1": "publicKey1",
 		"macAddr2": "publicKey2",
 	}
@@ -86,7 +89,7 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 		{
 			Id:            "satellite-1",
 			NodeType:      "satellite",
-			PublicKey:     "satellite-1-publicKey",
+			PublicKey:     PublicKeys{SatelliteMacAddrAlias: "satellite-1-publicKey"},
 			AccessRecords: nil,
 			CreatedAt:     time.Now().Format(TimeTemplate),
 			UpdatedAt:     time.Now().Format(TimeTemplate),
@@ -94,7 +97,7 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 		{
 			Id:            "satellite-2",
 			NodeType:      "satellite",
-			PublicKey:     "satellite-2-publicKey",
+			PublicKey:     PublicKeys{SatelliteMacAddrAlias: "satellite-2-publicKey"},
 			AccessRecords: nil,
 			CreatedAt:     time.Now().Format(TimeTemplate),
 			UpdatedAt:     time.Now().Format(TimeTemplate),
@@ -128,7 +131,7 @@ func (s *SmartContract) SatelliteRegister(ctx tci, id string, publicKey string) 
 	satellite := Node{
 		Id:            id,
 		NodeType:      "satellite",
-		PublicKey:     publicKey,
+		PublicKey:     PublicKeys{SatelliteMacAddrAlias: publicKey},
 		AccessRecords: nil,
 		CreatedAt:     time.Now().Format(TimeTemplate),
 		UpdatedAt:     time.Now().Format(TimeTemplate),
@@ -158,10 +161,10 @@ func (s *SmartContract) UserRegister(ctx tci, id string, macAddr string, publicK
 		if node.NodeType != "user" {
 			return errors.New("failed to call 'UserRegister' with provided non-user type")
 		}
-		if _, ok := node.PublicKey.(UserPublicKeys)[macAddr]; ok {
+		if _, ok := node.PublicKey[macAddr]; ok {
 			return errors.New("you've already registered (public key exists)")
 		}
-		node.PublicKey.(UserPublicKeys)[macAddr] = publicKey
+		node.PublicKey[macAddr] = publicKey
 		node.UpdatedAt = time.Now().Format(TimeTemplate)
 
 		userJSON, err = json.Marshal(*node)
@@ -195,7 +198,7 @@ func (s *SmartContract) CreateAccessRecord(ctx tci, id string, macAddr string, u
 	if node.NodeType != "user" {
 		return errors.New("cannot add access record into a non-user type object")
 	}
-	if _, ok := node.PublicKey.(UserPublicKeys)[macAddr]; !ok {
+	if _, ok := node.PublicKey[macAddr]; !ok {
 		return errors.Errorf("user with id %s and macAddr %s does not exist. please register first", id, macAddr)
 	}
 
@@ -226,7 +229,7 @@ func (s *SmartContract) GetSatellitePublicKey(ctx tci, id string) (string, error
 		return "", errors.Errorf("cannot get satellite's public key with non-satellite id %s", id)
 	}
 
-	publicKey := node.PublicKey.(string)
+	publicKey := node.PublicKey[SatelliteMacAddrAlias]
 
 	return publicKey, nil
 }
@@ -241,7 +244,7 @@ func (s *SmartContract) GetUserPublicKey(ctx tci, id string, macAddr string) (st
 		return "", errors.Errorf("cannot get user's public key with non-user id %s", id)
 	}
 
-	publicKey, ok := node.PublicKey.(UserPublicKeys)[macAddr]
+	publicKey, ok := node.PublicKey[macAddr]
 	if !ok {
 		return "", errors.Errorf("public key of the user with id %s & macAddr %s does not exist. please register first", id, macAddr)
 	}
