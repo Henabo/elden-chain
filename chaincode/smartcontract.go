@@ -2,9 +2,10 @@ package chaincode
 
 import (
 	"encoding/json"
+	"time"
+
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 	"github.com/pkg/errors"
-	"time"
 )
 
 type SmartContract struct {
@@ -33,6 +34,7 @@ type Node struct {
 	NodeType     string            `json:"nodeType"`
 	PublicKey    PublicKeys        `json:"publicKey"`
 	AccessRecord UserAccessRecords `json:"accessRecord"`
+	Status       string            `json:"status"` // 认证通过与否 ok
 	CreatedAt    string            `json:"createdAt"`
 	UpdatedAt    string            `json:"updatedAt"`
 }
@@ -209,6 +211,27 @@ func (s *SmartContract) CreateAccessRecord(ctx tci, id string, macAddr string, u
 	}
 
 	node.AccessRecord[macAddr] = append(node.AccessRecord[macAddr], userAccessRecord)
+	node.UpdatedAt = time.Now().Format(TimeTemplate)
+
+	nodeJSON, err := json.Marshal(*node)
+	if err != nil {
+		return errors.Wrap(err, "json marshal error")
+	}
+
+	return ctx.GetStub().PutState(id, nodeJSON)
+}
+
+func (s *SmartContract) ChangeAuthStatus(ctx tci, id string) error {
+	node, err := s.GetNodeById(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if node.NodeType != "user" {
+		return errors.New("cannot change auth-status for a non-user type object")
+	}
+
+	node.Status = "ok"
 	node.UpdatedAt = time.Now().Format(TimeTemplate)
 
 	nodeJSON, err := json.Marshal(*node)
