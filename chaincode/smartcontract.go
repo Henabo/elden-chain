@@ -42,6 +42,9 @@ type Node struct {
 const (
 	TimeTemplate          = "2006-01-02 15:04:05"
 	SatelliteMacAddrAlias = "elden"
+
+	UserStatusCertified   = "certified"
+	UserStatusUnCertified = "uncertified"
 )
 
 /**
@@ -85,6 +88,7 @@ func (s *SmartContract) InitLedger(ctx tci) error {
 			NodeType:     "user",
 			PublicKey:    userPublicKeys,
 			AccessRecord: userAccessRecords,
+			Status:       UserStatusUnCertified,
 			CreatedAt:    time.Now().Format(TimeTemplate),
 			UpdatedAt:    time.Now().Format(TimeTemplate),
 		},
@@ -179,6 +183,7 @@ func (s *SmartContract) UserRegister(ctx tci, id string, macAddr string, publicK
 			NodeType:     "user",
 			PublicKey:    map[string]string{macAddr: publicKey},
 			AccessRecord: UserAccessRecords{},
+			Status:       UserStatusUnCertified,
 			CreatedAt:    time.Now().Format(TimeTemplate),
 			UpdatedAt:    time.Now().Format(TimeTemplate),
 		}
@@ -231,7 +236,7 @@ func (s *SmartContract) ChangeAuthStatus(ctx tci, id string) error {
 		return errors.New("cannot change auth-status for a non-user type object")
 	}
 
-	node.Status = "ok"
+	node.Status = UserStatusCertified
 	node.UpdatedAt = time.Now().Format(TimeTemplate)
 
 	nodeJSON, err := json.Marshal(*node)
