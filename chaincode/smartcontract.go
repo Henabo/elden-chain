@@ -242,6 +242,19 @@ func (s *SmartContract) ChangeAuthStatus(ctx tci, id string) error {
 	return ctx.GetStub().PutState(id, nodeJSON)
 }
 
+func (s *SmartContract) DeleteNodeById(ctx tci, id string) error {
+	exists, err := s.IsNodeExists(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return errors.New("the node does not exist")
+	}
+
+	return ctx.GetStub().DelState(id)
+}
+
 func (s *SmartContract) GetSatellitePublicKey(ctx tci, id string) (string, error) {
 	node, err := s.GetNodeById(ctx, id)
 	if err != nil {
