@@ -226,7 +226,7 @@ func (s *SmartContract) CreateAccessRecord(ctx tci, id string, macAddr string, u
 	return ctx.GetStub().PutState(id, nodeJSON)
 }
 
-func (s *SmartContract) ChangeAuthStatus(ctx tci, id string) error {
+func (s *SmartContract) ChangeAuthStatus(ctx tci, id string, authStatusCode string) error {
 	node, err := s.GetNodeById(ctx, id)
 	if err != nil {
 		return err
@@ -236,7 +236,12 @@ func (s *SmartContract) ChangeAuthStatus(ctx tci, id string) error {
 		return errors.New("cannot change auth-status for a non-user type object")
 	}
 
-	node.Status = UserStatusCertified
+	// authStatusCode 认证状态码 0-未认证 1-已认证
+	if authStatusCode == "0" {
+		node.Status = UserStatusUnCertified
+	} else {
+		node.Status = UserStatusCertified
+	}
 	node.UpdatedAt = time.Now().Format(TimeTemplate)
 
 	nodeJSON, err := json.Marshal(*node)
