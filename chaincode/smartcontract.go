@@ -352,5 +352,9 @@ func (s *SmartContract) GetAllNodes(ctx tci) ([]*Node, error) {
 		nodes = append(nodes, &node)
 	}
 
+	if nodes == nil {
+		return nil, errors.New("Empty ledger")
+	}
+
 	return nodes, nil
 }
